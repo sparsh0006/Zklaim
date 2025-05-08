@@ -5,10 +5,10 @@ import { Buffer } from 'buffer'; // Make sure Buffer is available
 // --- IMPORTANT: Use the *exact* same allowlist as when creating the event ---
 const allowlist = [
   "EEWQu9BPi9fSov1L6PmvhkKwCueF7mEvTaVc1AifskMU",
-  "5tE6hDPXTdFg3hVPBhYqBsANsdw2ZTCDfswxJEhbHk81"
+  "21wcNo7Cjb134ZYY9PEjRRkXzP6kSMKosGBiG8GwZKQU"
 ];
 // --- Choose which attendee you are generating the proof for ---
-const attendeeToProve = "5tE6hDPXTdFg3hVPBhYqBsANsdw2ZTCDfswxJEhbHk81"; // Or the other one
+const attendeeToProve = "EEWQu9BPi9fSov1L6PmvhkKwCueF7mEvTaVc1AifskMU"; // Or the other one
 
 const { leaves, root } = generateMerkleTree(allowlist);
 console.log("Calculated Merkle Root:", root); // Verify this matches the root from your API response!
