@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // Target modern Node.js versions
+    "module": "CommonJS", // Standard Node.js module system
+    "lib": ["ES2020"],
+    "outDir": "./dist", // Output directory for compiled JS
+    "rootDir": "./src", // Source directory
+    "strict": true, // Enable strict type checking
+    "esModuleInterop": true, // Allows default imports from commonjs modules
+    "skipLibCheck": true, // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true, // Allow importing JSON files
+    "moduleResolution": "node",
+    "sourceMap": true // Generate source maps for debugging
+  },
+  "include": ["src/**/*"], // Which files to include
+  "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"] // Which files to exclude
+}
