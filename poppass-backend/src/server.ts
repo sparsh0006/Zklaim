@@ -38,7 +38,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void =>
 // Start server
 const PORT = config.port; // Make sure config.port correctly gets process.env.PORT from Render
 app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT} - CORS enabled for all origins.`);
+  console.log(`🚀 Server started on port ${PORT}`);
 });
 
 // Load backend wallet on startup
