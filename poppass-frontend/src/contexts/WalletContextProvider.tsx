@@ -17,7 +17,7 @@ interface WalletProps {
 }
 
 const WalletContextProvider: FC<WalletProps> = ({ children }) => {
-  const network = WalletAdapterNetwork.Mainnet; // Or Devnet/Testnet based on your Helius endpoint
+  const network = WalletAdapterNetwork.Devnet; // Or Devnet/Testnet based on your Helius endpoint
 
   const endpoint = useMemo(() => {
     const heliusRpcUrl = process.env.NEXT_PUBLIC_HELIUS_RPC_URL;
