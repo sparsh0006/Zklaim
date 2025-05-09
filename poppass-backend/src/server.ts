@@ -1,31 +1,24 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { config } from './config/env';
+import { config } from './config/env'; // Assuming this correctly loads process.env.PORT
 import { connectDB } from './config/db';
 import eventRoutes from './routes/eventRoutes';
 import claimRoutes from './routes/claimRoutes';
 
 const app = express();
 
-// Connect to MongoDB
 connectDB();
 
-// Enable CORS for all origins
-app.use(cors({
-    origin: 'http://localhost:3000',
-    credentials: true
-  }));
-
-// Parse incoming requests
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Health check
+
 app.get('/api/health', (_req: Request, res: Response): void => {
   res.json({ status: 'ok' });
 });
 
-// Routes
+
 app.use('/api/events', eventRoutes);
 app.use('/api/claim', claimRoutes);
 
@@ -43,9 +36,9 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void =>
 */
 
 // Start server
-const PORT = config.port;
+const PORT = config.port; // Make sure config.port correctly gets process.env.PORT from Render
 app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
+  console.log(`🚀 Server started on port ${PORT} - CORS enabled for all origins.`);
 });
 
 // Load backend wallet on startup
