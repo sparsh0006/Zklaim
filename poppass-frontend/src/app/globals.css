@@ -2,26 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Optional: If you still see issues, you can be more aggressive here, but usually not needed with Tailwind */
+/*
+html, body, #__next { // #__next is a common root div for Next.js pre-App Router
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+*/
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  /* font-family: 'Inter', sans-serif; */
+  /* Any other global body styles */
 }

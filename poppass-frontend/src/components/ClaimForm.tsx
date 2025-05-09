@@ -2,7 +2,7 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import React, { useState } from "react";
-import { getMerkleProof } from "../lib/merkletree"; // Updated import path
+import { getMerkleProof } from "../lib/merkletree";
 
 interface ClaimFormProps {
   eventId: string;
@@ -22,7 +22,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ eventId }) => {
       return;
     }
     if (!allowlistInput.trim()) {
-        setError("Please provide the event's allowlist to generate your proof.");
+        setError("Please provide the event's original allowlist to generate your proof.");
         return;
     }
 
@@ -37,7 +37,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ eventId }) => {
         .filter(addr => addr.length > 0);
 
     if (allowlistArray.length === 0) {
-        setError("Allowlist seems empty. Cannot generate proof.");
+        setError("Allowlist appears to be empty. Cannot generate proof.");
         setIsLoading(false);
         return;
     }
@@ -47,9 +47,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ eventId }) => {
       merkleProof = getMerkleProof(allowlistArray, publicKey.toBase58());
       if (!merkleProof) {
         if (!allowlistArray.includes(publicKey.toBase58())) {
-             throw new Error("Your address is not in the provided allowlist. Cannot generate proof.");
+             throw new Error("Your address is not in the provided allowlist. Proof cannot be generated.");
         }
-        throw new Error("Could not generate Merkle proof. Ensure your address is in the allowlist and the allowlist is correct.");
+        throw new Error("Could not generate Merkle proof. Please ensure the allowlist is correct and your address is included.");
       }
     } catch (err: any) {
       setError(`Proof generation error: ${err.message}`);
@@ -58,8 +58,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ eventId }) => {
     }
 
     try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      if (!backendUrl) {
+        throw new Error("Backend URL is not configured in your environment!");
+      }
+      const apiUrl = `${backendUrl}/api/claim/${eventId}`;
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/claim/${eventId}`,
+        apiUrl,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -69,68 +75,93 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ eventId }) => {
           }),
         }
       );
+
       const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to claim token");
+        throw new Error(data.message || "Failed to claim token. Please try again.");
       }
-      setSuccessMessage(data.message || "POPPass Claimed!");
+
+      setSuccessMessage(data.message || "POPPass Claimed Successfully!");
       if (data.transactionSignature) {
         setTransactionSignature(data.transactionSignature);
       }
     } catch (err: any) {
-      setError(err.message || "An unknown error occurred during claim.");
+      setError(err.message || "An unknown error occurred while trying to claim.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-700">
-        Claim POPPass for Event: <span className="font-mono text-purple-600">{eventId}</span>
-      </h2>
+  // Consistent theme classes for inputs and labels
+  const inputBaseClasses = "w-full bg-gp-input-bg border border-gp-border text-gp-text-light placeholder-gp-text-secondary rounded-md py-3 px-4 focus:outline-none focus:ring-2 focus:ring-gp-bright-green focus:border-transparent transition-colors duration-300 shadow-sm backdrop-blur-sm";
+  const labelBaseClasses = "block text-sm font-medium text-gp-bright-green mb-1.5"; // Using bright green for label accent
 
-      {!connected && <p className="text-center text-yellow-600">Please connect your wallet to proceed.</p>}
+  return (
+    // Main card for the form, using Greenish-Purple Solana theme's frosted glass effect
+    <div className="bg-gp-card-bg shadow-xl rounded-2xl p-6 sm:p-8 space-y-6 border border-gp-border backdrop-blur-md">
+      <h2 className="text-2xl font-bold mb-1 text-center text-white">
+        Claim POPPass for Event:
+      </h2>
+      {/* Event ID display, styled for readability and truncation */}
+      <p
+        className="font-mono text-gp-bright-green text-center text-lg block overflow-hidden text-ellipsis whitespace-nowrap max-w-[220px] sm:max-w-xs md:max-w-sm mx-auto mb-6"
+        title={eventId} // Shows full ID on hover
+      >
+        {eventId}
+      </p>
+
+      {/* Conditional rendering based on wallet connection */}
+      {!connected && (
+        // Using a theme-consistent color for the warning, can be gp-text-secondary or gp-mid-violet
+        <p className="text-center text-gp-mid-violet py-4 font-semibold">Please connect your wallet to proceed.</p>
+      )}
 
       {connected && publicKey && (
         <div className="space-y-4">
           <div>
-            <label htmlFor="allowlistForProof" className="block text-sm font-medium text-gray-700 mb-1">
-              <strong>Important:</strong> Paste the event's original allowlist below (comma or newline separated).
-              This is needed to generate your unique proof.
+            <label htmlFor="allowlistForProof" className={`${labelBaseClasses} text-left`}>
+              <strong>Important:</strong> Paste the event's original allowlist (comma or newline separated). This is needed to generate your unique proof.
             </label>
             <textarea
               id="allowlistForProof"
               value={allowlistInput}
               onChange={(e) => setAllowlistInput(e.target.value)}
-              rows={5}
+              rows={4}
               placeholder="WalletAddress1, WalletAddress2, ..."
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className={`${inputBaseClasses} min-h-[100px] mt-1`}
               required
             />
           </div>
           <button
             onClick={handleClaim}
             disabled={isLoading || !publicKey || !allowlistInput.trim()}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+            className="w-full bg-gp-mid-violet text-white font-semibold py-3 px-6 rounded-lg
+                       hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-gp-mid-violet focus:ring-offset-2 focus:ring-offset-gp-deep-blue-purple
+                       transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed
+                       shadow-md hover:shadow-gp-glow-sm transform hover:scale-[1.02]"
           >
             {isLoading ? "Claiming..." : "Claim POPPass"}
           </button>
         </div>
       )}
 
-      {error && <p className="mt-3 text-sm text-red-600 text-center">{error}</p>}
+      {/* Error message display */}
+      {error && <p className="mt-3 text-sm text-red-400 text-center">{error}</p>} {/* Red for errors is standard UX */}
+
+      {/* Success message display */}
       {successMessage && (
-        <div className="mt-4 p-3 bg-green-50 border border-green-300 rounded-md text-center">
-          <p className="text-md font-medium text-green-700">{successMessage}</p>
+        <div className="mt-6 p-4 bg-gp-card-bg/90 border border-gp-border rounded-md text-center space-y-2 backdrop-blur-sm"> {/* Slightly more opaque success card */}
+          <p className="text-lg font-medium text-gp-bright-green">{successMessage}</p>
           {transactionSignature && (
-            <p className="mt-1 text-sm">
+            <p className="text-xs sm:text-sm text-gp-text-light break-all">
               Transaction:{" "}
               <a
-                href={`https://explorer.solana.com/tx/${transactionSignature}?cluster=${process.env.NEXT_PUBLIC_HELIUS_RPC_URL?.includes("devnet") ? "devnet" : process.env.NEXT_PUBLIC_HELIUS_RPC_URL?.includes("testnet") ? "testnet" : "mainnet-beta"}`}
+                // Simplified cluster detection for the explorer link
+                href={`https://explorer.solana.com/tx/${transactionSignature}?cluster=${process.env.NEXT_PUBLIC_HELIUS_RPC_URL?.includes("devnet") ? "devnet" : "mainnet-beta"}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800"
+                className="underline hover:text-gp-bright-green"
               >
                 View on Explorer
               </a>
@@ -138,6 +169,13 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ eventId }) => {
           )}
         </div>
       )}
+
+      {/* Navigation link back to home */}
+      <div className="text-center mt-6">
+        <a href="/" className="text-gp-text-secondary hover:text-gp-bright-green transition-colors duration-300 text-sm">
+          ← Go to Home
+        </a>
+      </div>
     </div>
   );
 };

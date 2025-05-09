@@ -1,37 +1,28 @@
 "use client";
-import { QRCodeCanvas } from 'qrcode.react'; // Direct import
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface QrCodeDisplayProps {
-  eventId: string;
+  eventId: string; // Kept for potential future use, but claimUrl is now primary
+  claimUrl: string; // Pass the fully constructed claim URL
 }
 
-const QrCodeDisplay: React.FC<QrCodeDisplayProps> = ({ eventId }) => {
-  const claimUrl = `${window.location.origin}/claim/${eventId}`;
-
-  // Access the component via the namespace.
-  // The actual component name is often 'default' when imported this way if it was meant to be a default export,
-  // or it could be 'QRCode' or 'QRCodeCanvas' / 'QRCodeSVG'.
-  // Let's try 'default' first as it's a common pattern for UMD/CommonJS modules.
-  // If 'default' doesn't work, inspect QRCodeReact in your IDE or try QRCodeReact.QRCode
-  const QRCodeComponent = QRCodeCanvas;
-
-
+const QrCodeDisplay: React.FC<QrCodeDisplayProps> = ({ claimUrl }) => {
+  // No internal div for background or padding, parent will handle it
   return (
-    <div className="text-center p-4">
-      <QRCodeComponent
+      // ...
+      <QRCodeCanvas
         value={claimUrl}
-        size={200}
+        size={160}
         level={"H"}
-        includeMargin={true}
-        className="inline-block"
+        includeMargin={false}
+        bgColor="#FFFFFF"      // White background for QR
+        fgColor="#1A1A1D"      // Dark foreground for QR dots (e.g., a very dark gray or black)
+                               // Could also use your darkest theme color like gp-deep-blue-purple if it's dark enough
+        className="block"
       />
-      <p className="mt-2 text-sm">
-        <a href={claimUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 break-all">
-          {claimUrl}
-        </a>
-      </p>
-    </div>
+// ...
   );
 };
 
 export default QrCodeDisplay;
+

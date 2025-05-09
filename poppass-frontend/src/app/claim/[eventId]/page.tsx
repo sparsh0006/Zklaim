@@ -1,34 +1,28 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import WalletConnectButton from "../../../components/WalletConnectButton"; // Updated import path
-import ClaimForm from "../../../components/ClaimForm"; // Updated import path
-import Link from "next/link";
+import WalletConnectButton from "../../../components/WalletConnectButton";
+import ClaimForm from "../../../components/ClaimForm";
 
 export default function ClaimPage() {
   const params = useParams();
   const eventId = params.eventId as string;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-       <header className="flex flex-col sm:flex-row justify-between items-center mb-10 pb-4 border-b">
-        <Link href="/" className="text-3xl font-bold text-gray-800 hover:text-purple-600 mb-4 sm:mb-0">
+    <div className="min-h-screen flex flex-col items-center"> {/* Inherits gradient */}
+      <header className="w-full px-4 sm:px-8 py-5 flex justify-between items-center border-b border-gp-border">
+        <a href="/" className="text-3xl sm:text-4xl font-bold text-white hover:text-gp-bright-green transition-colors duration-300">
           Zklaim
-        </Link>
+        </a>
         <WalletConnectButton />
       </header>
-      <div className="max-w-lg mx-auto">
+      <main className="w-full max-w-lg mx-auto px-4 pt-10 sm:pt-16 pb-8 flex-grow flex flex-col justify-center">
         {eventId ? (
           <ClaimForm eventId={eventId} />
         ) : (
-          <p className="text-center text-gray-500">Loading event details or event ID not found...</p>
+          <p className="text-center text-gp-text-secondary">Loading event details or event ID not found...</p>
         )}
-      </div>
-      <div className="text-center mt-8">
-        <Link href="/" className="text-purple-600 hover:text-purple-800">
-          ← Go to Home
-        </Link>
-      </div>
+      </main>
     </div>
   );
 }

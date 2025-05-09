@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import WalletContextProvider from "../contexts/WalletContextProvider"; // Updated import path
+import WalletContextProvider from "../contexts/WalletContextProvider";
 
 export const metadata: Metadata = {
-  title: "POPPass Frontend",
-  description: "Claim your POPPass",
+  title: "Zklaim POPPass System",
+  description: "Create events and claim your Proof of Presence passes.",
 };
 
 export default function RootLayout({
@@ -13,13 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="bg-gray-100 text-gray-900">
+    <html lang="en" className="h-full">
+      <body className="h-full m-0 p-0 antialiased bg-gp-gradient text-gp-text-light selection:bg-gp-mid-violet selection:text-white"> {/* Applied global GP theme */}
         <WalletContextProvider>
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-grow container mx-auto p-4">
-             {children}
-            </main>
+          <div className="min-h-full flex flex-col">
+            {children}
           </div>
         </WalletContextProvider>
       </body>
