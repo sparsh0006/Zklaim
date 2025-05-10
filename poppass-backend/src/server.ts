@@ -1,31 +1,32 @@
+// backend/src/server.ts
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { config } from './config/env'; 
+import { config } from './config/env';
 import { connectDB } from './config/db';
 import eventRoutes from './routes/eventRoutes';
 import claimRoutes from './routes/claimRoutes';
+import aiRoutes from './routes/aiRoutes'; 
 
 const app = express();
 
 connectDB();
-
-app.use(cors());
+app.use(cors()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
 
 app.get('/api/health', (_req: Request, res: Response): void => {
   res.json({ status: 'ok' });
 });
 
-
 app.use('/api/events', eventRoutes);
 app.use('/api/claim', claimRoutes);
+app.use('/api', aiRoutes); 
+
 app.use((_req: Request, res: Response): void => {
-  res.status(404).json({ message: 'Not Found' });
+  res.status(404).json({ message: 'Not Found - This specific route does not exist on the backend.' });
 });
 
-const PORT = config.port; 
+const PORT = config.port;
 app.listen(PORT, () => {
   console.log(`🚀 Server started on port ${PORT}`);
 });

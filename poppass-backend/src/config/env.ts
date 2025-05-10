@@ -15,6 +15,8 @@ export const config = {
   heliusRpcUrl: getEnvVariable('HELIUS_RPC_URL'),
   backendWalletSecretKey: JSON.parse(getEnvVariable('BACKEND_WALLET_SECRET_KEY')) as number[],
   nodeEnv: process.env.NODE_ENV || 'development',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  serpApiKey: process.env.SERP_API_KEY || '',
 };
 
 if (config.backendWalletSecretKey.length !== 64) {
