@@ -1,54 +1,64 @@
 import EventModel from '../models/Event';
 import ClaimModel from '../models/Claim';
-import { verifyMerkleProof } from '../utils/merkletree';
+import { generateMerkleTree, getMerkleProof, verifyMerkleProof } from '../utils/merkletree';
 import { assignToken } from './solanaService';
 import { PublicKey } from '@solana/web3.js';
+import { Buffer } from 'buffer';
 
 export const claimToken = async (
   eventId: string,
-  attendeeAddress: string,
-  merkleProofHex: string[]
+  attendeeAddress: string
 ): Promise<{ success: boolean; message: string; txSignature?: string }> => {
 
-  // 1. Validate Inputs (basic)
-  if (!eventId || !attendeeAddress || !merkleProofHex) {
-    return { success: false, message: 'Missing required claim information.' };
+  if (!eventId || !attendeeAddress) {
+    return { success: false, message: 'Missing required claim information (eventId or attendeeAddress).' };
   }
   try {
-      new PublicKey(attendeeAddress); // Validate attendee address format
+      new PublicKey(attendeeAddress);
   } catch (e) {
        return { success: false, message: 'Invalid attendee wallet address format.' };
   }
 
-  // 2. Find Event
   const event = await EventModel.findById(eventId);
   if (!event) {
     return { success: false, message: 'Event not found.' };
   }
 
-  // 3. Check if Attendee is even on the Allowlist
-  // Note: Case-sensitive comparison is important for Base58 addresses
-  if (!event.allowlist.includes(attendeeAddress)) {
+  if (!event.allowlist || !event.allowlist.includes(attendeeAddress)) {
       return { success: false, message: 'Attendee address not found in event allowlist.' };
   }
 
-  // 4. Verify Merkle Proof (now we know the address *should* be verifiable)
-  const isProofValid = verifyMerkleProof(attendeeAddress, merkleProofHex, event.merkleRoot);
-  if (!isProofValid) {
-    // Address was on the list, but the provided proof didn't match the root.
-    return { success: false, message: 'Invalid Merkle proof provided.' };
+  try {
+    if (!event.merkleRoot) {
+        console.error(`Event ${eventId} is missing a Merkle root.`);
+        return { success: false, message: 'Event configuration error: Merkle root missing.' };
+    }
+    if (!event.allowlist || event.allowlist.length === 0) {
+        console.warn(`Event ${eventId} has an empty or missing allowlist, but proceeding with Merkle root check if it exists.`);
+    }
+
+    const { leaves } = generateMerkleTree(event.allowlist);
+    const proofForAttendee = getMerkleProof(leaves, attendeeAddress);
+
+    if (!proofForAttendee) {
+      return { success: false, message: 'Failed to generate internal Merkle proof. Address might not be in the effective tree structure.' };
+    }
+
+    const isProofValid = verifyMerkleProof(attendeeAddress, proofForAttendee, event.merkleRoot);
+    if (!isProofValid) {
+      console.error(`Internal Merkle proof verification failed for event ${eventId}, attendee ${attendeeAddress}.`);
+      return { success: false, message: 'Internal Merkle proof validation failed.' };
+    }
+  } catch (merkleError: any) {
+    console.error(`Error during internal Merkle proof generation/validation for event ${eventId}:`, merkleError);
+    return { success: false, message: `Internal error during proof processing: ${merkleError.message}` };
   }
 
-  // --- Proof is valid for an allowlisted address, proceed ---
-
-  // 5. Check if already claimed (Moved Down)
   const existingClaim = await ClaimModel.findOne({ eventId: event._id, attendeeAddress });
   if (existingClaim) {
-    // Eligible based on proof but already claimed.
     return { success: false, message: 'Token already claimed for this event.' };
   }
 
-  // 6. Assign the Compressed Token via Solana Service (Checks passed)
   let txSignature: string | undefined;
   try {
     const eventMintPublicKey = new PublicKey(event.mintAddress);
@@ -59,7 +69,6 @@ export const claimToken = async (
     return { success: false, message: `Failed to assign token on Solana: ${error.message || 'Unknown error'}` };
   }
 
-  // 7. Record the Claim in DB
   try {
     const newClaim = new ClaimModel({
       eventId: event._id,
@@ -71,6 +80,5 @@ export const claimToken = async (
     return { success: true, message: 'Claim successful on Solana, but database record update failed. Please contact support if issues persist.', txSignature };
   }
 
-  // 8. Success
   return { success: true, message: 'POPPass Claimed!', txSignature };
 };

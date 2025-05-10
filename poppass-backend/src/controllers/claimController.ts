@@ -1,24 +1,43 @@
 import { Request, Response } from 'express';
 import * as claimService from '../services/claimService';
+import { PublicKey } from '@solana/web3.js'; // Keep for address validation
 
-// Add : Promise<void>
 export const claimTokenHandler = async (req: Request, res: Response): Promise<void> => {
   const { eventId } = req.params;
-  const { attendeeAddress, merkleProof } = req.body;
+  const { attendeeAddress } = req.body; // REMOVED: merkleProof from req.body
 
-  if (!attendeeAddress || !merkleProof || !Array.isArray(merkleProof)) {
-      // Ensure response is sent before returning
-      res.status(400).json({ message: 'Missing required fields: attendeeAddress, merkleProof (array).' });
-      return; // Added return
+  // Basic validation for presence of fields
+  // MerkleProof is no longer expected from the client
+  if (!attendeeAddress) {
+      res.status(400).json({ message: 'Missing required field: attendeeAddress.' });
+      return;
+  }
+
+  // Optional: Validate attendeeAddress format here as well, though service does it too
+  try {
+    new PublicKey(attendeeAddress);
+  } catch (e) {
+    res.status(400).json({ message: `Invalid attendeeAddress format: ${attendeeAddress}` });
+    return;
   }
 
   try {
-    const result = await claimService.claimToken(eventId, attendeeAddress, merkleProof);
+    // Call service without merkleProof
+    const result = await claimService.claimToken(eventId, attendeeAddress);
 
     if (result.success) {
       res.status(200).json({ message: result.message, transactionSignature: result.txSignature });
     } else {
-      const statusCode = result.message.includes('already claimed') ? 409 : 400;
+      // Determine appropriate status code based on message
+      let statusCode = 400; // Default bad request
+      if (result.message.includes('already claimed')) {
+        statusCode = 409; // Conflict
+      } else if (result.message.includes('not found in event allowlist')) {
+        statusCode = 403; // Forbidden (or 404 if you prefer event/user combo not found)
+      } else if (result.message.includes('Event not found')) {
+        statusCode = 404;
+      }
+      // Add more specific status codes based on other potential error messages from service
       res.status(statusCode).json({ message: result.message });
     }
   } catch (error: any) {

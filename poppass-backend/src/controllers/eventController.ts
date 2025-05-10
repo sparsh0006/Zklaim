@@ -1,36 +1,32 @@
 import { Request, Response } from 'express';
+import { PublicKey } from '@solana/web3.js';
 import * as eventService from '../services/eventService';
-import { PublicKey } from '@solana/web3.js'; // Import Solana public key class
 
 export const createEventHandler = async (req: Request, res: Response): Promise<void> => {
   const { name, description, creatorAddress, allowlist } = req.body;
 
-  // Basic validation for presence of fields
   if (!name || !description || !creatorAddress || !Array.isArray(allowlist)) {
     res.status(400).json({ message: 'Missing required fields: name, description, creatorAddress, allowlist (array).' });
     return;
   }
 
-  // Helper function for Solana address validation
-  const isValidSolanaAddress = (address: any): boolean => { // Added 'any' type for address to handle non-string inputs gracefully
+  const isValidSolanaAddress = (address: any): boolean => {
     if (typeof address !== 'string') {
-        return false; // Not a string, so not a valid address format
+        return false;
     }
     try {
       new PublicKey(address);
       return true;
-    } catch (e) { // Catch specific error if needed, but for boolean, catch is enough
+    } catch (e) {
       return false;
     }
   };
 
-  // Validate creatorAddress
   if (!isValidSolanaAddress(creatorAddress)) {
     res.status(400).json({ message: `Invalid format for creatorAddress: ${creatorAddress}. Please provide a valid Solana public key.` });
     return;
   }
 
-  // Validate allowlist entries
   if (allowlist.length > 0) {
     const invalidAddressesInAllowlist = allowlist.filter((addr: any) => !isValidSolanaAddress(addr));
     if (invalidAddressesInAllowlist.length > 0) {
@@ -40,16 +36,9 @@ export const createEventHandler = async (req: Request, res: Response): Promise<v
       return;
     }
   }
-  // If you want to disallow empty allowlists, you can add a check here:
-  // else {
-  //   res.status(400).json({ message: 'Allowlist cannot be empty for event creation.' });
-  //   return;
-  // }
-  // For now, assuming your backend/merkletree.ts handles an empty allowlist gracefully if needed.
 
   try {
     const newEvent = await eventService.createEvent(name, description, creatorAddress, allowlist);
-    // Respond with relevant event details
     res.status(201).json({
         message: 'Event created successfully',
         eventId: newEvent._id,
@@ -58,8 +47,6 @@ export const createEventHandler = async (req: Request, res: Response): Promise<v
     });
   } catch (error: any) {
     console.error('Error creating event:', error);
-    // Check if the error is from the Merkle tree utility due to invalid pubkey format
-    // (this is a fallback, as the controller should catch most format issues now)
     if (error.message && error.message.includes('Invalid public key format')) {
         res.status(400).json({ message: `Failed to create event: ${error.message}` });
     } else {
@@ -68,9 +55,22 @@ export const createEventHandler = async (req: Request, res: Response): Promise<v
   }
 };
 
-// Optional: QR Code Endpoint (remains unchanged)
-/*
-export const getEventQrCodeHandler = async (req: Request, res: Response): Promise<void> => {
-  // ... (existing QR code logic) ...
+export const getPublicEventDetailsHandler = async (req: Request, res: Response): Promise<void> => {
+  const { eventId } = req.params;
+  if (!eventId) {
+    res.status(400).json({ message: "Event ID is required." });
+    return;
+  }
+
+  try {
+    const eventDetails = await eventService.getPublicEventDetails(eventId);
+    if (!eventDetails) {
+      res.status(404).json({ message: "Event not found." });
+      return;
+    }
+    res.status(200).json(eventDetails);
+  } catch (error: any) {
+    console.error(`Error fetching public details for event ${eventId}:`, error);
+    res.status(500).json({ message: `Failed to fetch event details: ${error.message || 'Internal server error'}` });
+  }
 };
-*/

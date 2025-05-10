@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IClaim extends Document {
-  eventId: Types.ObjectId; // Reference to the Event
-  attendeeAddress: string; // Solana address
+  eventId: Types.ObjectId; 
+  attendeeAddress: string; 
   claimedAt: Date;
 }
 
@@ -12,7 +12,6 @@ const ClaimSchema: Schema = new Schema({
   claimedAt: { type: Date, default: Date.now },
 });
 
-// Ensure an attendee can only claim once per event
 ClaimSchema.index({ eventId: 1, attendeeAddress: 1 }, { unique: true });
 
 export default mongoose.model<IClaim>('Claim', ClaimSchema);

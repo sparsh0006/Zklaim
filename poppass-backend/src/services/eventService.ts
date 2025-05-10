@@ -5,33 +5,36 @@ import { createEventMint } from './solanaService';
 export const createEvent = async (
   name: string,
   description: string,
-  creatorAddress: string, // Should be validated Solana address
+  creatorAddress: string,
   allowlist: string[]
 ): Promise<IEvent> => {
-  // 1. Generate Merkle Tree
   const { root: merkleRoot } = generateMerkleTree(allowlist);
-
-  // 2. Create the Compressed Token Mint on Solana for this event
   const { mint: mintPublicKey } = await createEventMint();
   const mintAddress = mintPublicKey.toBase58();
 
-  // 3. Create Event Document
-  // TODO: Generate a unique claim link base or use event ID
-  const claimLinkBase = `http://localhost:${process.env.PORT || 5001}/api/claim/`; // Example
+  const claimLinkBase = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/claim/`; // Or your preferred base URL
 
   const newEvent = new EventModel({
     name,
     description,
     creatorAddress,
     mintAddress,
-    allowlist, // Store the original list
+    allowlist,
     merkleRoot,
     claimLinkBase,
   });
 
-  // 4. Save to DB
   await newEvent.save();
   console.log(`Event "${name}" created with mint ${mintAddress} and Merkle root ${merkleRoot}`);
-
   return newEvent;
+};
+
+export const getPublicEventDetails = async (
+  eventId: string
+): Promise<{ name: string; description: string } | null> => {
+  const event = await EventModel.findById(eventId).select('name description').lean();
+  if (!event) {
+    return null;
+  }
+  return { name: event.name, description: event.description };
 };

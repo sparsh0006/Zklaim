@@ -19,4 +19,8 @@ export class ApiError extends Error {
           super(message, 400);
       }
   }
-  // ... other error types
+  export class UnauthorizedError extends ApiError {
+      constructor(message = 'Unauthorized') {
+          super(message, 401);
+      }
+  }
