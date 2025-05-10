@@ -49,7 +49,7 @@ const EventForm = () => {
         </div>
         <div className="mt-6">
           <p className="font-semibold text-gp-bright-green mb-3">Share this QR Code:</p>
-          <div className="inline-block p-0 bg-white rounded-md shadow-lg">
+          <div className="inline-block p-1 bg-white rounded-md shadow-lg">
               <QrCodeDisplay eventId={eventResult.eventId} claimUrl={eventResult.claimUrl} />
           </div>
           <p className="mt-3 text-xs text-gp-text-secondary break-all">

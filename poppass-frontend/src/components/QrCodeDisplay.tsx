@@ -12,7 +12,7 @@ const QrCodeDisplay: React.FC<QrCodeDisplayProps> = ({ claimUrl }) => {
       // ...
       <QRCodeCanvas
         value={claimUrl}
-        size={160}
+        size={150}
         level={"H"}
         includeMargin={false}
         bgColor="#FFFFFF"      // White background for QR
